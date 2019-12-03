@@ -9,6 +9,8 @@ from starlette.applications import Starlette
 from starlette.config import Config
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
+from starlette.responses import JSONResponse, PlainTextResponse
+from starlette.endpoints import HTTPEndpoint
 
 Base = declarative_base()
 
@@ -74,43 +76,41 @@ async def record_view(request):
     Session = sessionmaker(bind=engine)
     session = Session()
     record_id = request.path_params['record_id']
-    q = session.query(Record).with_entities(Record.dat, Record.val).filter(Record.id == record_id)
-    dat, matrix = q.first()
-    matrix = matrix[1:-1]
-    matrix = list(matrix.split(', '))
-    # for idx, val in enumerate(bigdata):
-    #     print(idx, val)
-    xyt = []
-    step = 2.5
-    c = 0
-    for i, y in enumerate(np.arange(90, -90, -step)):
-        for j, x in enumerate(np.append(np.arange(0, 180, step), np.arange(-180, 0, step))):
-            t = matrix[i + j + c]
-            val = [x, y, t]
-            xyt.append(val)
-        c += 143
-
-    dict_xyt = {i: xyt[i] for i in range(0, len(xyt))}
-
-    # df = pd.DataFrame(xyt)
-    # df.to_csv('xyt.csv', index=False, header=['x', 'y', 't'])
-
-    # feature_collection = FeatureCollection([xyt_to_feature(idx=i, x=val[0], y=val[1], temperature=val[2])
-    #                                         for i, val in enumerate(xyt)
-    #                                         ])
-    # with open('statics/js/data.geojson', 'w') as f:
-    #     dump(feature_collection, f)
-
-    with open('statics/js/bigdata.json', 'w') as f:
-        json.dump([xyt_to_feature(idx=i, x=val[0], y=val[1], temperature=val[2])
-                   for i, val in enumerate(xyt)
-                   ], f)
+    q = session.query(Record).with_entities(Record.dat).filter(Record.id == record_id)
+    dat = q.first()[0]
     template = "record.html"
     context = {"request": request,
                "dat": dat,
+               "record_id": record_id,
                }
     conn.close()
     return templates.TemplateResponse(template, context)
+
+
+@app.route('/bigdict/{record_id}')
+class BigDict(HTTPEndpoint):
+    async def get(self, request):
+        record_id = request.path_params['record_id']
+        conn = engine.connect()
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        q = session.query(Record).with_entities(Record.dat, Record.val).filter(Record.id == record_id)
+        dat, matrix = q.first()
+        matrix = matrix[1:-1]
+        matrix = list(matrix.split(', '))
+        xyt = []
+        step = 2.5
+        c = 0
+        for i, y in enumerate(np.arange(90, -90, -step)):
+            for j, x in enumerate(np.append(np.arange(0, 180, step), np.arange(-180, 0, step))):
+                t = matrix[i + j + c]
+                val = [x, y, t]
+                xyt.append(val)
+            c += 143
+        bigdict = [xyt_to_feature(idx=i, x=val[0], y=val[1], temperature=val[2])
+                   for i, val in enumerate(xyt)]
+        conn.close()
+        return JSONResponse(bigdict)
 
 
 @app.route('/error')
@@ -142,4 +142,4 @@ async def server_error(request, exc):
 
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host='0.0.0.0', port=8000, reload=True)
+    uvicorn.run("app:app", host='localhost', port=8000, reload=False)

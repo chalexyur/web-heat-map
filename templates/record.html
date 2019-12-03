@@ -13,9 +13,7 @@
 
         <div id="mapid" style="width: 1000px; height: 80vh;"></div>
         <script>
-            let url = "{{ url_for('static', path='/js/bigdata.json') }}";
-
-            const rrr = fetch(url)
+            const rrr = fetch("/bigdict/{{record_id}}")
                 .then((resp) => resp.json())
                 .then(function (data) {
 
