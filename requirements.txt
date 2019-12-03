@@ -7,3 +7,4 @@ databases
 sqlalchemy
 geojson
 pandas
+psycopg2-binary

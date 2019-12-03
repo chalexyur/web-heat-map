@@ -21,7 +21,7 @@ templates = Jinja2Templates(directory='templates')
 
 app = Starlette(debug=True)
 app.mount('/static', StaticFiles(directory='statics'), name='static')
-config = Config(".env")
+config = Config("env")
 
 DATABASE_URL = config('DATABASE_URL')
 engine = create_engine(DATABASE_URL, echo=False)
