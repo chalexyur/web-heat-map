@@ -1,0 +1,9 @@
+aiofiles
+jinja2
+starlette
+uvicorn
+numpy
+databases
+sqlalchemy
+geojson
+pandas

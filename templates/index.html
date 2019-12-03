@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <main role="main">
+        <div class="list-group">
+            {% for record in records %}
+                <a href="/records/{{ record }}" class="list-group-item list-group-item-action">{{ record }}</a>
+            {% endfor %}
+        </div>
+    </main>
+{% endblock %}
