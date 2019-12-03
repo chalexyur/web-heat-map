@@ -1,17 +1,14 @@
-import numpy as np
-import pandas as pd
-import databases
-from starlette.applications import Starlette
-from starlette.staticfiles import StaticFiles
-from starlette.responses import HTMLResponse
-from starlette.templating import Jinja2Templates
-from starlette.config import Config
-import uvicorn
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
-from geojson import Point, Feature, FeatureCollection, dump
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 import json
+
+import numpy as np
+import uvicorn
+from sqlalchemy import create_engine, MetaData, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from starlette.applications import Starlette
+from starlette.config import Config
+from starlette.staticfiles import StaticFiles
+from starlette.templating import Jinja2Templates
 
 Base = declarative_base()
 

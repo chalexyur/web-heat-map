@@ -3,8 +3,5 @@ jinja2
 starlette
 uvicorn
 numpy
-databases
 sqlalchemy
-geojson
-pandas
-psycopg2-binary
+psycopg2
