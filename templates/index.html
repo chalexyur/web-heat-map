@@ -3,7 +3,7 @@
 {% block content %}
     <main role="main">
         <div class="list-group">
-            {% for record in records %}
+            {% for record in id_list %}
                 <a href="/records/{{ record }}" class="list-group-item list-group-item-action">{{ record }}</a>
             {% endfor %}
         </div>
