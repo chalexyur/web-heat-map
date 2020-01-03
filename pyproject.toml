@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "web-heat-map"
+name = "fastapi-heatmap"
 version = "0.1.0"
 description = ""
-authors = ["chalexyur <chalexyur@gmail.com>"]
+authors = ["cmrd-a <cmrd.a@ya.ru>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -15,6 +15,8 @@ psycopg2 = "^2.8"
 fastapi = "^0.45.0"
 pypika = "^0.35.18"
 asyncpg = "^0.20.0"
+python-multipart = "^0.0.5"
+buildpg = "^0.2.3"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.4.4"

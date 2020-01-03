@@ -9,11 +9,16 @@
     <script src="{{ url_for('static', path='/js/heatmap.min.js') }}"></script>
     <script src="{{ url_for('static', path='/js/leaflet-heatmap.js') }}"></script>
     <main role="main">
-        <h2>{{ dat }}</h2>
+        <h2>{{ table_name }} / {% if record_id %}{{ record_id }}, {{ dat }}{% endif %}</h2>
 
         <div id="mapid" style="width: 1000px; height: 80vh;"></div>
         <script>
-            const rrr = fetch("/bigdict/{{record_id}}")
+            const bigdict_url =
+                {% if record_id %}  "/tables/{{ table_name }}/records/{{record_id}}/bigdict";
+                {% elif start_date %} "/tables/{{ table_name }}/records/{{record_id}}/bigdict";
+                {% endif %}
+            const bigdict = fetch(bigdict_url
+            )
                 .then((resp) => resp.json())
                 .then(function (data) {
 
