@@ -1,3 +1,3 @@
-# web-heat-map
+# fastapi-heatmap
 
 some prototype
