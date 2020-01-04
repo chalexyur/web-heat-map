@@ -1,3 +1,6 @@
+from datetime import date
+
+import buildpg
 import numpy as np
 import uvicorn
 from asyncpg import Connection, connect
@@ -5,16 +8,11 @@ from fastapi import FastAPI, Form
 from pypika import Query, Table, Order
 from starlette.config import Config
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-from pydantic import BaseModel
-from datetime import date
-from typing import List
 
-import buildpg
-
-config = Config("env")
+config = Config('env')
 DATABASE_URL = config('DATABASE_URL')
 
 app = FastAPI()
@@ -22,12 +20,28 @@ app.mount('/static', StaticFiles(directory='static'), name='static')
 templates = Jinja2Templates(directory='templates')
 
 
-def xyt_to_feature(idx, x, y, temperature):
+async def xyt_to_feature(x, y, temperature):
     return {
         'lat': y,
         'lng': x,
         'count': float(temperature)
     }
+
+
+async def get_bigdict_from_matrix(matrix: list):
+    xyt = []
+    step = 2.5
+    c = 0
+    for i, y in enumerate(np.arange(90, -90, -step)):
+        for j, x in enumerate(np.append(np.arange(0, 180, step), np.arange(-180, 0, step))):
+            t = matrix[i + j + c]
+            val = [x, y, t]
+            xyt.append(val)
+        c += 143
+
+    bigdict = [await xyt_to_feature(x=val[0], y=val[1], temperature=val[2])
+               for val in xyt]
+    return bigdict
 
 
 @app.get('/')
@@ -37,7 +51,7 @@ async def index(request: Request) -> templates.TemplateResponse:
         'request': request,
         'table_names': table_names
     }
-    return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse('index.html', context)
 
 
 @app.get('/tables/{table_name}')
@@ -57,7 +71,7 @@ async def table_view(request: Request, table_name: str) -> templates.TemplateRes
         'table_name': table_name,
         'id_list': id_list,
     }
-    return templates.TemplateResponse("table.html", context)
+    return templates.TemplateResponse('table.html', context)
 
 
 @app.get('/tables/{table_name}/records/{record_id}')
@@ -68,16 +82,16 @@ async def record_view(request: Request, table_name: str, record_id: int) -> temp
         str((Query.from_(table).select(table.dat).where(table.id == record_id)))
     )
     context = {
-        "request": request,
+        'request': request,
         'table_name': table_name,
-        "record_id": record_id,
-        "dat": record[0],
+        'record_id': record_id,
+        'dat': record[0],
     }
-    return templates.TemplateResponse("record.html", context)
+    return templates.TemplateResponse('record.html', context)
 
 
 @app.get('/tables/{table_name}/records/{record_id}/bigdict/')
-async def bigdict(table_name: str, record_id: int):
+async def get_bigdict(table_name: str, record_id: int):
     conn: Connection = app.state.connection
     table = Table(table_name)
     record = await conn.fetchrow(
@@ -88,25 +102,17 @@ async def bigdict(table_name: str, record_id: int):
     matrix = record[0]
     matrix = matrix[1:-1]
     matrix = list(matrix.split(', '))
-    xyt = []
-    step = 2.5
-    c = 0
-    for i, y in enumerate(np.arange(90, -90, -step)):
-        for j, x in enumerate(np.append(np.arange(0, 180, step), np.arange(-180, 0, step))):
-            t = matrix[i + j + c]
-            val = [x, y, t]
-            xyt.append(val)
-        c += 143
-    bigdict = [xyt_to_feature(idx=i, x=val[0], y=val[1], temperature=val[2])
-               for i, val in enumerate(xyt)]
+    bigdict = await get_bigdict_from_matrix(matrix)
     return JSONResponse(bigdict)
 
 
+@app.post('/tables/{table_name}/get_average_for_values/')
 async def get_average_for_values(
+        *,
         table_name: str,
-        start_date: date,
-        end_date: date
-) -> List[float]:
+        start_date: date = Form(...),
+        end_date: date = Form(...),
+) -> JSONResponse:
     conn: Connection = app.state.connection
     query, args = buildpg.render(
         """
@@ -137,50 +143,55 @@ async def get_average_for_values(
         end_date=end_date,
     )
     calculated_values = await conn.fetch(query, *args)
+    values = [rec[0] for rec in calculated_values]
+    bigdict = await get_bigdict_from_matrix(values)
+    return JSONResponse(bigdict)
 
-    return [rec[0] for rec in calculated_values]
 
-
-@app.post("/tables/{table_name}/calculate-position/")
-async def calculation(
+@app.post('/tables/{table_name}/average/')
+async def average(
         *,
         table_name: str,
         start_date: date = Form(...),
         end_date: date = Form(...),
-        request: Request) -> List[float]:
-    positions = await get_average_for_values(table_name, start_date, end_date)
-
-    return positions
+        request: Request) -> templates.TemplateResponse:
+    context = {
+        'request': request,
+        'table_name': table_name,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return templates.TemplateResponse('average.html', context)
 
 
 @app.route('/error')
 async def error(request):
-    raise RuntimeError("Oh no")
+    raise RuntimeError('Oh no')
 
 
 @app.exception_handler(404)
 async def not_found(request, exc):
-    template = "404.html"
-    context = {"request": request}
+    template = '404.html'
+    context = {'request': request}
     return templates.TemplateResponse(template, context, status_code=404)
 
 
 @app.exception_handler(500)
 async def server_error(request, exc):
-    template = "500.html"
-    context = {"request": request}
+    template = '500.html'
+    context = {'request': request}
     return templates.TemplateResponse(template, context, status_code=500)
 
 
-@app.on_event("startup")
+@app.on_event('startup')
 async def app_init():
     app.state.connection = await connect(DATABASE_URL)
 
 
-@app.on_event("shutdown")
+@app.on_event('shutdown')
 async def app_stop():
     await app.state.connection.close()
 
 
-if __name__ == "__main__":
-    uvicorn.run("app:app", host='localhost', port=8000, reload=False)
+if __name__ == '__main__':
+    uvicorn.run('app:app', host='localhost', port=8000, reload=False)

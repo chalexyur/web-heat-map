@@ -9,11 +9,25 @@
     <script src="{{ url_for('static', path='/js/heatmap.min.js') }}"></script>
     <script src="{{ url_for('static', path='/js/leaflet-heatmap.js') }}"></script>
     <main role="main">
-        <h2>{{ table_name }} / {{ record_id }}, {{ dat }}</h2>
+        <h2>{{ table_name }} / {{ start_date }} : {{ end_date }}</h2>
 
         <div id="mapid" style="width: 1000px; height: 80vh;"></div>
         <script>
-            const bigdict = fetch("/tables/{{ table_name }}/records/{{record_id}}/bigdict")
+            var myHeaders = new Headers();
+            myHeaders.append("Content-Type", "multipart/form-data;");
+
+            var myFormdata = new FormData();
+            myFormdata.append("start_date", "{{start_date}}");
+            myFormdata.append("end_date", "{{end_date}}");
+
+            var requestOptions = {
+                method: 'POST',
+                body: myFormdata,
+            };
+
+
+
+            const bigdict = fetch("/tables/{{table_name}}/get_average_for_values/", requestOptions)
                 .then((resp) => resp.json())
                 .then(function (data) {
 
