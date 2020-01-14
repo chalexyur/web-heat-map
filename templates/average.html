@@ -27,7 +27,7 @@
 
 
 
-            const bigdict = fetch("/tables/{{table_name}}/get_average_for_values/", requestOptions)
+            let bigdict = fetch("/tables/{{table_name}}/get_average_for_values/", requestOptions)
                 .then((resp) => resp.json())
                 .then(function (data) {
 

@@ -16,6 +16,7 @@ pypika = "^0.35.18"
 asyncpg = "^0.20.0"
 python-multipart = "^0.0.5"
 buildpg = "^0.2.3"
+lxml = "^4.4.2"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.4.4"
